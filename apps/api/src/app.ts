@@ -248,6 +248,63 @@ app.post("/v1/webhooks/stripe", async (c) => {
   return c.json({ received: true });
 });
 
+// GET /v1/demo — try ParseFlow without an API key
+// Returns a realistic sample invoice parse result
+app.get("/v1/demo", (c) => {
+  const scenarios = {
+    invoice: {
+      id: crypto.randomUUID(),
+      status: "success",
+      document_type: "invoice",
+      vendor: "Acme Solutions Ltd",
+      vendor_address: "123 Business Ave, San Francisco, CA 94102",
+      invoice_number: "INV-2026-00142",
+      date: "2026-02-28",
+      due_date: "2026-03-30",
+      total: 4750.00,
+      subtotal: 4375.00,
+      tax: 375.00,
+      currency: "USD",
+      line_items: [
+        { description: "Software Development Services", quantity: 35, unit_price: 125.00, amount: 4375.00 }
+      ],
+      confidence: 0.94,
+      processing_ms: 7,
+      model_used: "rule-based-v1",
+    },
+    receipt: {
+      id: crypto.randomUUID(),
+      status: "success",
+      document_type: "receipt",
+      vendor: "Cloud Infrastructure Co",
+      vendor_address: null,
+      invoice_number: null,
+      date: "2026-03-01",
+      due_date: null,
+      total: 89.99,
+      subtotal: 89.99,
+      tax: 0,
+      currency: "USD",
+      line_items: [
+        { description: "Pro Plan — Monthly", quantity: 1, unit_price: 89.99, amount: 89.99 }
+      ],
+      confidence: 0.88,
+      processing_ms: 4,
+      model_used: "rule-based-v1",
+    },
+  };
+
+  const scenario = (c.req.query("scenario") ?? "invoice") as keyof typeof scenarios;
+  const result = scenarios[scenario] ?? scenarios.invoice;
+
+  return c.json({
+    ...result,
+    id: crypto.randomUUID(), // fresh ID each time
+    _demo: true,
+    _note: "This is a demo response. Register at /v1/register for a real API key.",
+  });
+});
+
 app.notFound((c) => {
   return c.json({ error: "not found" }, 404);
 });
