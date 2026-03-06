@@ -8,27 +8,50 @@ ParseFlow is a document parsing API. Send a PDF or image file, receive structure
 
 Base URL: https://api-ebon-tau-30.vercel.app
 
+### Health Check (no auth)
+GET /health
+Returns: { "status": "ok", "version": "0.2.1", "timestamp": "..." }
+
 ### Register (no auth required)
 POST /v1/register
 Body: { "name": "Your Company" }
 Returns: { "api_key": "pf_live_...", "plan": "free", "parses_quota": 50 }
+Note: API key shown only once — save it securely.
+
+### Demo — try without an API key (no auth)
+GET /v1/demo?scenario=invoice
+GET /v1/demo?scenario=receipt
+POST /v1/demo  Body: { "scenario": "invoice" | "receipt" }
+Returns: realistic sample parse result with _demo: true flag
 
 ### Parse a Document (API key required)
 POST /v1/parse
 Header: X-API-Key: pf_live_your_key
 Body: multipart/form-data with "file" field (PDF, JPEG, PNG, WebP, max 10MB)
-Returns: structured JSON with extracted invoice/document data
+Optional field: include_raw_text=true to receive raw OCR output
+Returns: structured JSON with extracted document data
 
-### Check Usage
+Extracted fields: id, status, document_type, vendor, vendor_address,
+invoice_number, date, due_date, total, subtotal, tax, currency,
+line_items (description, quantity, unit_price, amount), confidence,
+processing_ms, model_used
+
+### Check Usage (API key required)
 GET /v1/usage
 Header: X-API-Key: pf_live_your_key
-Returns: parses_used, parses_quota, parses_remaining for current month
+Returns: parses_used, parses_quota, parses_remaining, plan, period_start, period_end
+
+### Upgrade Plan (API key required)
+POST /v1/checkout
+Header: X-API-Key: pf_live_your_key
+Body: { "plan": "pro" | "scale" }
+Returns: { "checkout_url": "...", "provider": "stripe" | "lemonsqueezy" }
 
 ## Pricing
 
 - Free: 50 parses/month, no credit card required
 - Pro: $9/month, 1,000 parses/month
-- Scale: $29/month, unlimited parses
+- Scale: $29/month, 10,000 parses/month
 
 ## Quick Start
 
@@ -42,11 +65,22 @@ curl -X POST https://api-ebon-tau-30.vercel.app/v1/register \
 curl -X POST https://api-ebon-tau-30.vercel.app/v1/parse \
   -H "X-API-Key: pf_live_your_key_here" \
   -F "file=@invoice.pdf"
+
+# 3. Try without signing up
+curl "https://api-ebon-tau-30.vercel.app/v1/demo?scenario=invoice"
 ```
 
 ## OpenAPI Spec
 
 https://api-ebon-tau-30.vercel.app/openapi.json
+
+## Postman Collection
+
+https://github.com/NikitaDmitrieff/parseflow/blob/main/parseflow.postman_collection.json
+
+## Status Page
+
+https://parseflow-dashboard.vercel.app/status
 
 ## Source
 

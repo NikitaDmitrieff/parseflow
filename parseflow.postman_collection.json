@@ -1,0 +1,409 @@
+{
+  "info": {
+    "_postman_id": "parseflow-v021",
+    "name": "ParseFlow API",
+    "description": "ParseFlow is a document parsing API that extracts structured JSON from invoices, receipts, and PDFs in a single API call.\n\n**Base URL:** `https://api-ebon-tau-30.vercel.app`\n\n**Authentication:** Set `X-API-Key` header to your API key (obtained free from `/v1/register`).\n\n**Quick Start:**\n1. Call `POST /v1/register` with your company name — get an API key instantly (no email required)\n2. Call `POST /v1/parse` with your document file\n3. Receive structured JSON with vendor, amounts, dates, line items\n\n**Free tier:** 50 parses/month, no credit card required.\n\n**Links:**\n- Dashboard: https://parseflow-dashboard.vercel.app\n- Docs: https://parseflow-dashboard.vercel.app/docs\n- Status: https://parseflow-dashboard.vercel.app/status\n- GitHub: https://github.com/NikitaDmitrieff/parseflow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": {
+      "major": 0,
+      "minor": 2,
+      "patch": 1
+    }
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://api-ebon-tau-30.vercel.app",
+      "type": "string",
+      "description": "ParseFlow API base URL"
+    },
+    {
+      "key": "api_key",
+      "value": "pf_live_your_key_here",
+      "type": "string",
+      "description": "Your ParseFlow API key — get one free from POST /v1/register"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Check API health. Returns current status, version, and timestamp. No authentication required."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/health"
+                }
+              },
+              "body": "{\n  \"status\": \"ok\",\n  \"version\": \"0.2.0\",\n  \"timestamp\": \"2026-03-06T08:00:00.000Z\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "POST /v1/register",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/v1/register",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "register"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Company\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Register a new organization and receive an API key instantly. No email or credit card required.\n\nThe returned `api_key` will not be shown again — save it securely.\n\n**Free tier:** 50 parses/month included."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "originalRequest": {
+                "method": "POST",
+                "url": { "raw": "{{base_url}}/v1/register" },
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\"name\":\"My Company\"}" }
+              },
+              "body": "{\n  \"organization_id\": \"uuid-here\",\n  \"api_key\": \"pf_live_abc123...\",\n  \"plan\": \"free\",\n  \"parses_quota\": 50,\n  \"warning\": \"Save this key — it will not be shown again.\"\n}"
+            },
+            {
+              "name": "400 Bad Request — name missing",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"error\": \"name required\",\n  \"code\": \"VALIDATION_ERROR\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Parsing",
+      "item": [
+        {
+          "name": "POST /v1/parse — Invoice PDF",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/v1/parse",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "parse"]
+            },
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "description": "Your ParseFlow API key"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/path/to/invoice.pdf",
+                  "description": "PDF, JPEG, PNG, or WebP file — max 10MB"
+                },
+                {
+                  "key": "include_raw_text",
+                  "value": "false",
+                  "type": "text",
+                  "description": "Set to 'true' to include raw extracted text in response"
+                }
+              ]
+            },
+            "description": "Parse a document and receive structured JSON.\n\n**Supported formats:** PDF, JPEG, PNG, WebP (max 10MB)\n\n**Extracted fields:**\n- `vendor` — seller/supplier name\n- `vendor_address` — seller address\n- `invoice_number` — invoice/receipt identifier\n- `date` — document date (ISO 8601)\n- `due_date` — payment due date\n- `total` — total amount due\n- `subtotal` — pre-tax amount\n- `tax` — tax amount\n- `currency` — 3-letter ISO currency code\n- `line_items[]` — array of line items with description, quantity, unit_price, amount\n- `confidence` — extraction confidence score (0–1)\n- `processing_ms` — server-side processing time in milliseconds\n- `document_type` — detected document type (invoice, receipt, other)\n\nRequires `X-API-Key` authentication header."
+          },
+          "response": [
+            {
+              "name": "200 OK — Invoice parsed",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": \"uuid-here\",\n  \"status\": \"success\",\n  \"document_type\": \"invoice\",\n  \"vendor\": \"Acme Solutions Ltd\",\n  \"vendor_address\": \"123 Business Ave, San Francisco, CA 94102\",\n  \"invoice_number\": \"INV-2026-00142\",\n  \"date\": \"2026-02-28\",\n  \"due_date\": \"2026-03-30\",\n  \"total\": 4750.00,\n  \"subtotal\": 4375.00,\n  \"tax\": 375.00,\n  \"currency\": \"USD\",\n  \"line_items\": [\n    {\n      \"description\": \"Software Development Services\",\n      \"quantity\": 35,\n      \"unit_price\": 125.00,\n      \"amount\": 4375.00\n    }\n  ],\n  \"confidence\": 0.94,\n  \"processing_ms\": 847,\n  \"model_used\": \"claude-3-5-sonnet-20241022\"\n}"
+            },
+            {
+              "name": "400 — Invalid content type",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"error\": \"Content-Type must be multipart/form-data\",\n  \"code\": \"INVALID_CONTENT_TYPE\"\n}"
+            },
+            {
+              "name": "400 — File too large",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"error\": \"file too large (max 10MB)\",\n  \"code\": \"FILE_TOO_LARGE\"\n}"
+            },
+            {
+              "name": "401 — Missing or invalid API key",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"error\": \"unauthorized\",\n  \"code\": \"UNAUTHORIZED\"\n}"
+            },
+            {
+              "name": "429 — Quota exceeded",
+              "status": "Too Many Requests",
+              "code": 429,
+              "body": "{\n  \"error\": \"monthly quota exceeded\",\n  \"code\": \"QUOTA_EXCEEDED\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /v1/parse — Receipt image (with raw text)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/v1/parse",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "parse"]
+            },
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/path/to/receipt.jpg"
+                },
+                {
+                  "key": "include_raw_text",
+                  "value": "true",
+                  "type": "text",
+                  "description": "Returns raw_text field with OCR output"
+                }
+              ]
+            },
+            "description": "Parse a receipt image with raw text included in the response. Useful for debugging or when you need the raw OCR output alongside the structured data."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usage",
+      "item": [
+        {
+          "name": "GET /v1/usage",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/v1/usage",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "usage"]
+            },
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "description": "Your ParseFlow API key"
+              }
+            ],
+            "description": "Check your current month's usage, quota, and remaining parses.\n\nReturns:\n- `parses_used` — documents parsed this month\n- `parses_quota` — monthly limit for your plan\n- `parses_remaining` — parses left this month\n- `plan` — current plan (free, pro, scale)\n- `period_start` / `period_end` — billing period dates"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"api_key_id\": \"uuid-here\",\n  \"api_key_prefix\": \"pf_live_ab\",\n  \"organization_id\": \"uuid-here\",\n  \"plan\": \"free\",\n  \"parses_used\": 12,\n  \"parses_quota\": 50,\n  \"parses_remaining\": 38,\n  \"period_start\": \"2026-03-01T00:00:00.000Z\",\n  \"period_end\": \"2026-03-31T00:00:00.000Z\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Demo",
+      "item": [
+        {
+          "name": "GET /v1/demo — Invoice scenario",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/v1/demo?scenario=invoice",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "demo"],
+              "query": [
+                {
+                  "key": "scenario",
+                  "value": "invoice",
+                  "description": "invoice (default) or receipt"
+                }
+              ]
+            },
+            "description": "Try ParseFlow without an API key. Returns a realistic sample parse result.\n\n**Scenarios:**\n- `invoice` (default) — sample B2B invoice with line items\n- `receipt` — sample SaaS subscription receipt\n\nResponses include `_demo: true` to distinguish from real parses."
+          },
+          "response": [
+            {
+              "name": "200 OK — Demo invoice",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": \"uuid-here\",\n  \"status\": \"success\",\n  \"document_type\": \"invoice\",\n  \"vendor\": \"Acme Solutions Ltd\",\n  \"vendor_address\": \"123 Business Ave, San Francisco, CA 94102\",\n  \"invoice_number\": \"INV-2026-00142\",\n  \"date\": \"2026-02-28\",\n  \"due_date\": \"2026-03-30\",\n  \"total\": 4750.00,\n  \"subtotal\": 4375.00,\n  \"tax\": 375.00,\n  \"currency\": \"USD\",\n  \"line_items\": [\n    {\n      \"description\": \"Software Development Services\",\n      \"quantity\": 35,\n      \"unit_price\": 125.00,\n      \"amount\": 4375.00\n    }\n  ],\n  \"confidence\": 0.94,\n  \"processing_ms\": 7,\n  \"model_used\": \"rule-based-v1\",\n  \"_demo\": true,\n  \"_note\": \"This is a demo response. Register at /v1/register for a real API key.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /v1/demo — Receipt scenario",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/v1/demo?scenario=receipt",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "demo"],
+              "query": [
+                {
+                  "key": "scenario",
+                  "value": "receipt"
+                }
+              ]
+            },
+            "description": "Demo endpoint — receipt scenario. Returns a sample SaaS subscription receipt."
+          }
+        },
+        {
+          "name": "POST /v1/demo",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/v1/demo",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "demo"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scenario\": \"receipt\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "POST version of the demo endpoint. Pass `scenario` in the JSON body."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Billing",
+      "item": [
+        {
+          "name": "POST /v1/checkout — Upgrade to Pro",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/v1/checkout",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "checkout"]
+            },
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan\": \"pro\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create a checkout session to upgrade your plan. Returns a `checkout_url` to redirect the user to Stripe or Lemon Squeezy.\n\n**Plans:**\n- `pro` — $9/month, 1,000 parses/month\n- `scale` — $29/month, 10,000 parses/month\n\nRequires `X-API-Key` authentication."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"checkout_url\": \"https://checkout.stripe.com/...\",\n  \"provider\": \"stripe\"\n}"
+            },
+            {
+              "name": "503 — Payments not configured",
+              "status": "Service Unavailable",
+              "code": 503,
+              "body": "{\n  \"error\": \"payments not enabled\",\n  \"code\": \"PAYMENTS_NOT_CONFIGURED\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /v1/checkout — Upgrade to Scale",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/v1/checkout",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "checkout"]
+            },
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan\": \"scale\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Upgrade to the Scale plan — $29/month for 10,000 parses."
+          }
+        }
+      ]
+    }
+  ]
+}
