@@ -359,16 +359,16 @@ const demoHandler = async (c: any) => {
   const scenario = (scenarioParam ?? "invoice") as keyof typeof scenarios;
   const result = scenarios[scenario] ?? scenarios.invoice;
 
-  // Log demo hits for organic traffic tracking (fire-and-forget)
+  // Log demo hits for organic traffic tracking (awaited — serverless functions kill async after response)
   const ua = c.req.header("user-agent")?.substring(0, 200) ?? null;
   const ip = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
   const ipHash = ip
     ? createHash("sha256").update(ip).digest("hex").substring(0, 16)
     : null;
-  db.from("pf_demo_hits").insert({ scenario, user_agent: ua, ip_hash: ipHash }).then(
-    () => {},
-    (err: unknown) => console.error("demo_hit insert failed:", err)
-  );
+  const { error: demoLogErr } = await db
+    .from("pf_demo_hits")
+    .insert({ scenario, user_agent: ua, ip_hash: ipHash });
+  if (demoLogErr) console.error("demo_hit insert failed:", demoLogErr);
   console.log(JSON.stringify({
     event: "demo_hit",
     scenario,
