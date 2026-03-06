@@ -6,6 +6,7 @@ import { createHash, randomBytes } from "crypto";
 import { db } from "./db.js";
 import { apiKeyAuth, type AuthVariables } from "./auth.js";
 import { parseDocument, logParse } from "./parse.js";
+import { stripe, PLANS, createCheckoutSession, handleCheckoutComplete, type PlanKey } from "./stripe.js";
 
 export const app = new Hono<{ Variables: AuthVariables }>();
 
@@ -160,6 +161,84 @@ app.get("/v1/usage", apiKeyAuth, async (c) => {
     period_start: periodStart,
     period_end: periodEnd,
   });
+});
+
+// ─── Stripe: create checkout session ────────────────────────────────────────
+// POST /v1/checkout  { plan: "pro" | "scale" }  (requires API key auth)
+app.post("/v1/checkout", apiKeyAuth, async (c) => {
+  if (!stripe) {
+    return c.json({ error: "payments not enabled", code: "STRIPE_NOT_CONFIGURED" }, 503);
+  }
+
+  const body = await c.req.json().catch(() => null);
+  const plan = body?.plan as PlanKey | undefined;
+
+  if (!plan || !PLANS[plan]) {
+    return c.json({
+      error: "plan required: 'pro' or 'scale'",
+      code: "VALIDATION_ERROR",
+      available_plans: Object.fromEntries(
+        Object.entries(PLANS).map(([k, v]) => [k, v.label])
+      ),
+    }, 400);
+  }
+
+  const org = c.get("org");
+  const dashboardBase = process.env.DASHBOARD_URL ?? "https://parseflow-dashboard.vercel.app";
+
+  try {
+    const url = await createCheckoutSession(
+      org.id,
+      plan,
+      `${dashboardBase}/upgrade/success`,
+      `${dashboardBase}/upgrade/cancel`
+    );
+    return c.json({ checkout_url: url }, 200);
+  } catch (err: any) {
+    console.error("checkout error:", err);
+    return c.json({ error: err.message ?? "checkout failed", code: "STRIPE_ERROR" }, 500);
+  }
+});
+
+// ─── Stripe: webhook ─────────────────────────────────────────────────────────
+// POST /v1/webhooks/stripe  (no API key auth — verified by Stripe signature)
+app.post("/v1/webhooks/stripe", async (c) => {
+  if (!stripe) {
+    return c.json({ error: "stripe not configured" }, 503);
+  }
+
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.error("STRIPE_WEBHOOK_SECRET not set");
+    return c.json({ error: "webhook secret not configured" }, 500);
+  }
+
+  const sig = c.req.header("stripe-signature");
+  if (!sig) {
+    return c.json({ error: "missing stripe-signature header" }, 400);
+  }
+
+  const rawBody = await c.req.arrayBuffer();
+  let event: import("stripe").Stripe.Event;
+
+  try {
+    event = stripe.webhooks.constructEvent(Buffer.from(rawBody), sig, webhookSecret);
+  } catch (err: any) {
+    console.error("stripe webhook signature failed:", err.message);
+    return c.json({ error: `webhook error: ${err.message}` }, 400);
+  }
+
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as import("stripe").Stripe.Checkout.Session;
+    try {
+      await handleCheckoutComplete(session);
+    } catch (err: any) {
+      console.error("handleCheckoutComplete error:", err);
+      return c.json({ error: "failed to update plan" }, 500);
+    }
+  }
+
+  return c.json({ received: true });
 });
 
 app.notFound((c) => {

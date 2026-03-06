@@ -21,7 +21,7 @@ export default function HomePage() {
               Pricing
             </a>
             <a
-              href="/login"
+              href="/register"
               className="text-sm px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-700 transition-colors"
             >
               Get API Key
@@ -51,7 +51,7 @@ export default function HomePage() {
 
         <div className="flex items-center justify-center gap-4">
           <a
-            href="/login"
+            href="/register"
             className="px-6 py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-700 transition-colors text-lg"
           >
             Get API Key — Free
@@ -203,7 +203,7 @@ export default function HomePage() {
             No credit card required. 100 free parses on us.
           </p>
           <a
-            href="/login"
+            href="/register"
             className="inline-block px-8 py-4 bg-slate-900 text-white rounded-xl font-medium text-lg hover:bg-slate-700 transition-colors"
           >
             Get API Key — Free
