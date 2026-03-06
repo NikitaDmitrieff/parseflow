@@ -1,11 +1,43 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { db } from "./db.js";
 import type { ApiKey, Organization } from "./db.js";
-import type { ParseResult } from "@parseflow/types";
 
-if (!process.env.ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY required");
+interface LineItem {
+  description: string;
+  quantity?: number;
+  unit_price?: number;
+  amount: number;
+}
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+interface ParseResult {
+  id: string;
+  status: "success" | "partial" | "failed";
+  document_type: "invoice" | "receipt" | "contract" | "other";
+  vendor?: string;
+  vendor_address?: string;
+  invoice_number?: string;
+  date?: string;
+  due_date?: string;
+  total?: number;
+  subtotal?: number;
+  tax?: number;
+  currency?: string;
+  line_items?: LineItem[];
+  raw_text?: string;
+  confidence: number;
+  processing_ms: number;
+  model_used: string;
+}
+
+let _anthropic: Anthropic | null = null;
+
+function getAnthropic(): Anthropic {
+  if (!_anthropic) {
+    if (!process.env.ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
+    _anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  }
+  return _anthropic;
+}
 
 const PARSE_SYSTEM_PROMPT = `You are a document parser. Extract structured data from invoices, receipts, and financial documents.
 Return ONLY valid JSON with no markdown, no explanation — just the JSON object.
@@ -65,7 +97,7 @@ export async function parseDocument(
         { type: "text", text: "Extract all structured data from this document." },
       ];
 
-  const response = await anthropic.messages.create({
+  const response = await getAnthropic().messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 2048,
     system: PARSE_SYSTEM_PROMPT,

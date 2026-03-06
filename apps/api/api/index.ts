@@ -13,7 +13,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const request = new Request(url.toString(), {
     method: req.method ?? "GET",
-    headers: req.headers as HeadersInit,
+    headers: req.headers as Record<string, string>,
     body: body?.length ? body : undefined,
   });
 
