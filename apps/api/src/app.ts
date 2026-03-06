@@ -125,7 +125,7 @@ app.post("/v1/parse", apiKeyAuth, async (c) => {
         document_type: "other",
         confidence: 0,
         processing_ms: 0,
-        model_used: "claude-haiku-4-5-20251001",
+        model_used: "unknown",
       },
       file.size,
       errMsg
