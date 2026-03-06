@@ -2,14 +2,34 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ParseFlow — AI Document Parser API",
+  title: "ParseFlow — Invoice & Document Parser API",
   description:
-    "AI-powered invoice and document parsing API. Extract structured data from PDFs and images in seconds. Simple pricing. No minimums.",
+    "Parse invoices, receipts, and PDFs into structured JSON via a single API call. Free tier: 50 parses/month. No credit card required.",
+  keywords: [
+    "invoice parser API",
+    "document parsing API",
+    "PDF to JSON API",
+    "invoice OCR API",
+    "receipt parser",
+    "document extraction API",
+    "structured data extraction",
+  ],
   openGraph: {
-    title: "ParseFlow — AI Document Parser API",
+    title: "ParseFlow — Invoice & Document Parser API",
     description:
-      "Extract structured data from invoices and documents via a simple API call.",
+      "Upload a PDF or image, get back structured JSON. Vendor, amounts, dates, line items — extracted in one API call. Free tier available.",
     type: "website",
+    url: "https://parseflow-dashboard.vercel.app",
+    siteName: "ParseFlow",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ParseFlow — Invoice & Document Parser API",
+    description:
+      "Upload a PDF or image, get back structured JSON. Free tier: 50 parses/month.",
+  },
+  alternates: {
+    canonical: "https://parseflow-dashboard.vercel.app",
   },
 };
 
