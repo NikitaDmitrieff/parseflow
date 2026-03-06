@@ -196,20 +196,36 @@ export default function DocsPage() {
           </div>
         </section>
 
-        {/* OpenAPI */}
+        {/* Postman */}
         <section className="mb-16">
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">OpenAPI Specification</h2>
-          <p className="text-slate-600 mb-4">
-            The full OpenAPI 3.0 spec is available for import into Postman, Insomnia, or any compatible tool.
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">Try in Postman</h2>
+          <p className="text-slate-600 mb-6">
+            Import the ParseFlow Postman collection to test all endpoints instantly — no setup required.
           </p>
-          <a
-            href={`${API_BASE}/openapi.json`}
-            className="inline-flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-slate-700 hover:border-slate-400 transition-colors text-sm font-mono"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {API_BASE}/openapi.json
-          </a>
+          <div className="flex flex-wrap gap-3">
+            <a
+              href="https://raw.githubusercontent.com/NikitaDmitrieff/parseflow/main/parseflow.postman_collection.json"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Download Postman Collection
+            </a>
+            <a
+              href={`${API_BASE}/openapi.json`}
+              className="inline-flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-slate-700 hover:border-slate-400 transition-colors text-sm font-mono"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              OpenAPI 3.0 spec
+            </a>
+          </div>
+          <p className="text-slate-500 text-sm mt-4">
+            After importing: set the <code className="font-mono bg-slate-100 px-1 rounded">base_url</code> variable to{" "}
+            <code className="font-mono bg-slate-100 px-1 rounded">{API_BASE}</code> and{" "}
+            <code className="font-mono bg-slate-100 px-1 rounded">api_key</code> to your key from{" "}
+            <a href="/register" className="text-slate-700 underline">registration</a>.
+          </p>
         </section>
 
         {/* Error Codes */}
