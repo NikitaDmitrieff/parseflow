@@ -24,7 +24,9 @@ export interface ApiKey {
 export interface Organization {
   id: string;
   name: string;
-  plan: "free" | "pro" | "enterprise";
+  plan: "free" | "pro" | "scale" | "enterprise";
   parses_quota: number;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
   created_at: string;
 }
