@@ -1,0 +1,53 @@
+# ParseFlow
+
+> Parse invoices, receipts, and documents into structured JSON via a single REST API call.
+
+ParseFlow is a document parsing API. Send a PDF or image file, receive structured JSON data including vendor name, invoice number, date, due date, total amount, subtotal, tax, currency, and line items.
+
+## API
+
+Base URL: https://api-ebon-tau-30.vercel.app
+
+### Register (no auth required)
+POST /v1/register
+Body: { "name": "Your Company" }
+Returns: { "api_key": "pf_live_...", "plan": "free", "parses_quota": 50 }
+
+### Parse a Document (API key required)
+POST /v1/parse
+Header: X-API-Key: pf_live_your_key
+Body: multipart/form-data with "file" field (PDF, JPEG, PNG, WebP, max 10MB)
+Returns: structured JSON with extracted invoice/document data
+
+### Check Usage
+GET /v1/usage
+Header: X-API-Key: pf_live_your_key
+Returns: parses_used, parses_quota, parses_remaining for current month
+
+## Pricing
+
+- Free: 50 parses/month, no credit card required
+- Pro: $9/month, 1,000 parses/month
+- Scale: $29/month, unlimited parses
+
+## Quick Start
+
+```bash
+# 1. Register (instant, no email required)
+curl -X POST https://api-ebon-tau-30.vercel.app/v1/register \
+  -H "Content-Type: application/json" \
+  -d '{"name": "My Company"}'
+
+# 2. Parse an invoice
+curl -X POST https://api-ebon-tau-30.vercel.app/v1/parse \
+  -H "X-API-Key: pf_live_your_key_here" \
+  -F "file=@invoice.pdf"
+```
+
+## OpenAPI Spec
+
+https://api-ebon-tau-30.vercel.app/openapi.json
+
+## Source
+
+https://github.com/NikitaDmitrieff/parseflow
