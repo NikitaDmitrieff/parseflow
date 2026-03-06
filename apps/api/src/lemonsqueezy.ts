@@ -38,7 +38,7 @@ async function lsRequest(path: string, options?: RequestInit) {
     const body = await res.text().catch(() => "");
     throw new Error(`LemonSqueezy API error ${res.status}: ${body}`);
   }
-  return res.json();
+  return res.json() as Promise<Record<string, any>>;
 }
 
 /**

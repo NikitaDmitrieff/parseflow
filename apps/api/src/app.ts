@@ -304,9 +304,9 @@ app.post("/v1/webhooks/lemonsqueezy", async (c) => {
   return c.json({ received: true });
 });
 
-// GET /v1/demo — try ParseFlow without an API key
+// GET|POST /v1/demo — try ParseFlow without an API key
 // Returns a realistic sample invoice parse result
-app.get("/v1/demo", (c) => {
+const demoHandler = async (c: any) => {
   const scenarios = {
     invoice: {
       id: crypto.randomUUID(),
@@ -350,8 +350,22 @@ app.get("/v1/demo", (c) => {
     },
   };
 
-  const scenario = (c.req.query("scenario") ?? "invoice") as keyof typeof scenarios;
+  // Support both GET (?scenario=) and POST ({ scenario: "..." })
+  let scenarioParam = c.req.query("scenario");
+  if (!scenarioParam && c.req.method === "POST") {
+    const body = await c.req.json().catch(() => null);
+    scenarioParam = body?.scenario;
+  }
+  const scenario = (scenarioParam ?? "invoice") as keyof typeof scenarios;
   const result = scenarios[scenario] ?? scenarios.invoice;
+
+  // Log demo hits for organic traffic tracking
+  console.log(JSON.stringify({
+    event: "demo_hit",
+    scenario,
+    ua: c.req.header("user-agent")?.substring(0, 100) ?? "unknown",
+    ts: new Date().toISOString(),
+  }));
 
   return c.json({
     ...result,
@@ -359,7 +373,10 @@ app.get("/v1/demo", (c) => {
     _demo: true,
     _note: "This is a demo response. Register at /v1/register for a real API key.",
   });
-});
+};
+
+app.get("/v1/demo", demoHandler);
+app.post("/v1/demo", demoHandler);
 
 app.notFound((c) => {
   return c.json({ error: "not found" }, 404);
