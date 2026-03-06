@@ -3,10 +3,22 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { prettyJSON } from "hono/pretty-json";
 import { createHash, randomBytes } from "crypto";
+import { readFileSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 import { db } from "./db.js";
 import { apiKeyAuth, type AuthVariables } from "./auth.js";
 import { parseDocument, logParse } from "./parse.js";
 import { stripe, PLANS, createCheckoutSession, handleCheckoutComplete, type PlanKey } from "./stripe.js";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+let openapiSpec: object | null = null;
+try {
+  const specPath = join(__dirname, "..", "openapi.json");
+  openapiSpec = JSON.parse(readFileSync(specPath, "utf-8"));
+} catch {
+  // spec file not found — endpoint will return 404
+}
 
 export const app = new Hono<{ Variables: AuthVariables }>();
 
@@ -27,6 +39,11 @@ app.get("/health", (c) => {
     version: "0.1.0",
     timestamp: new Date().toISOString(),
   });
+});
+
+app.get("/openapi.json", (c) => {
+  if (!openapiSpec) return c.json({ error: "spec not available" }, 404);
+  return c.json(openapiSpec);
 });
 
 app.post("/v1/register", async (c) => {
