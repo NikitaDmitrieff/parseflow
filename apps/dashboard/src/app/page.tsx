@@ -147,6 +147,76 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Comparison */}
+      <section className="py-20">
+        <div className="max-w-5xl mx-auto px-6">
+          <h2 className="text-3xl font-bold text-slate-900 text-center mb-4">
+            How ParseFlow compares
+          </h2>
+          <p className="text-slate-600 text-center mb-12">
+            Simple pricing, no lock-in, no minimums.
+          </p>
+
+          <div className="overflow-x-auto rounded-2xl border border-slate-200">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="text-left px-6 py-4 font-semibold text-slate-700">Feature</th>
+                  <th className="text-center px-6 py-4 font-bold text-brand-700 bg-brand-50">ParseFlow</th>
+                  <th className="text-center px-6 py-4 font-semibold text-slate-500">Veryfi</th>
+                  <th className="text-center px-6 py-4 font-semibold text-slate-500">Mindee</th>
+                  <th className="text-center px-6 py-4 font-semibold text-slate-500">AWS Textract</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                <tr>
+                  <td className="px-6 py-4 text-slate-700 font-medium">Price per parse</td>
+                  <td className="px-6 py-4 text-center text-brand-700 font-bold bg-brand-50/30">$0.02</td>
+                  <td className="px-6 py-4 text-center text-slate-500">~$0.08</td>
+                  <td className="px-6 py-4 text-center text-slate-500">$0.02–$0.10</td>
+                  <td className="px-6 py-4 text-center text-slate-500">$0.015+ setup</td>
+                </tr>
+                <tr className="bg-slate-50/50">
+                  <td className="px-6 py-4 text-slate-700 font-medium">Free tier</td>
+                  <td className="px-6 py-4 text-center bg-brand-50/30 text-brand-700 font-semibold">50/mo</td>
+                  <td className="px-6 py-4 text-center text-slate-500">Limited trial</td>
+                  <td className="px-6 py-4 text-center text-slate-500">250/mo</td>
+                  <td className="px-6 py-4 text-center text-slate-500">None</td>
+                </tr>
+                <tr>
+                  <td className="px-6 py-4 text-slate-700 font-medium">Monthly minimum</td>
+                  <td className="px-6 py-4 text-center bg-brand-50/30 text-brand-700 font-semibold">None</td>
+                  <td className="px-6 py-4 text-center text-slate-500">Yes</td>
+                  <td className="px-6 py-4 text-center text-slate-500">None</td>
+                  <td className="px-6 py-4 text-center text-slate-500">AWS account</td>
+                </tr>
+                <tr className="bg-slate-50/50">
+                  <td className="px-6 py-4 text-slate-700 font-medium">Setup time</td>
+                  <td className="px-6 py-4 text-center bg-brand-50/30 text-brand-700 font-semibold">&lt; 5 min</td>
+                  <td className="px-6 py-4 text-center text-slate-500">Sales call</td>
+                  <td className="px-6 py-4 text-center text-slate-500">&lt; 10 min</td>
+                  <td className="px-6 py-4 text-center text-slate-500">Hours</td>
+                </tr>
+                <tr>
+                  <td className="px-6 py-4 text-slate-700 font-medium">REST API</td>
+                  <td className="px-6 py-4 text-center bg-brand-50/30 text-green-600 font-semibold">Yes</td>
+                  <td className="px-6 py-4 text-center text-green-600">Yes</td>
+                  <td className="px-6 py-4 text-center text-green-600">Yes</td>
+                  <td className="px-6 py-4 text-center text-green-600">Yes</td>
+                </tr>
+                <tr className="bg-slate-50/50">
+                  <td className="px-6 py-4 text-slate-700 font-medium">Receipts + invoices</td>
+                  <td className="px-6 py-4 text-center bg-brand-50/30 text-green-600 font-semibold">Yes</td>
+                  <td className="px-6 py-4 text-center text-green-600">Yes</td>
+                  <td className="px-6 py-4 text-center text-green-600">Yes</td>
+                  <td className="px-6 py-4 text-center text-slate-400">Requires config</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing */}
       <section className="bg-slate-50 py-20">
         <div className="max-w-5xl mx-auto px-6">
