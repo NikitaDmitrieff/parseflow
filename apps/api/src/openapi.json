@@ -107,6 +107,32 @@
         }
       }
     },
+    "/v1/demo": {
+      "get": {
+        "summary": "Try ParseFlow — no API key required",
+        "description": "Returns a realistic sample invoice parse result. Use this to explore the response format before signing up. Pass `?scenario=receipt` for a receipt example.",
+        "operationId": "demo",
+        "parameters": [
+          {
+            "name": "scenario",
+            "in": "query",
+            "required": false,
+            "description": "Sample document type: invoice (default) or receipt",
+            "schema": { "type": "string", "enum": ["invoice", "receipt"], "default": "invoice" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sample parse result",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ParseResult" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/register": {
       "post": {
         "summary": "Register and get API key",

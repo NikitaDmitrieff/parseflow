@@ -65,6 +65,56 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Try it live — no signup needed */}
+      <section className="max-w-3xl mx-auto px-6 pb-10">
+        <div className="bg-green-50 border border-green-200 rounded-2xl overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-green-200">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-green-800 text-sm font-semibold">
+              Try it right now — no signup needed
+            </span>
+          </div>
+          <pre className="p-6 text-sm font-mono text-slate-800 overflow-x-auto leading-relaxed bg-white">
+            <code>{`curl https://api-ebon-tau-30.vercel.app/v1/demo
+
+# Response
+{
+  "id": "f3a1c2d4-...",
+  "status": "success",
+  "document_type": "invoice",
+  "vendor": "Acme Solutions Ltd",
+  "vendor_address": "123 Business Ave, San Francisco, CA 94102",
+  "invoice_number": "INV-2026-00142",
+  "date": "2026-02-28",
+  "due_date": "2026-03-30",
+  "total": 4750.00,
+  "subtotal": 4375.00,
+  "tax": 375.00,
+  "currency": "USD",
+  "line_items": [
+    { "description": "Software Development Services", "quantity": 35, "unit_price": 125.00, "amount": 4375.00 }
+  ],
+  "confidence": 0.94,
+  "processing_ms": 7,
+  "model_used": "rule-based-v1",
+  "_demo": true,
+  "_note": "This is a demo response. Register at /v1/register for a real API key."
+}`}</code>
+          </pre>
+          <div className="px-4 py-3 bg-green-50 border-t border-green-200 flex items-center justify-between">
+            <span className="text-green-700 text-xs font-mono">
+              Try receipt: curl &quot;.../v1/demo?scenario=receipt&quot;
+            </span>
+            <a
+              href="/register"
+              className="text-xs px-3 py-1.5 bg-slate-900 text-white rounded-lg hover:bg-slate-700 transition-colors font-medium"
+            >
+              Get API Key
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* Code example */}
       <section className="max-w-3xl mx-auto px-6 pb-20">
         <div className="bg-slate-900 rounded-2xl overflow-hidden shadow-xl">
