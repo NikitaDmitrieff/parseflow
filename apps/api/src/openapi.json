@@ -1,0 +1,245 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ParseFlow — AI Invoice & Document Parser API",
+    "description": "Parse invoices, receipts, and financial documents into structured JSON. No training required — upload a PDF or image, get back extracted vendor, amounts, dates, line items, and more.\n\n**Key features:**\n- Supports PDF, JPEG, PNG, WebP\n- Extracts: vendor, invoice_number, date, due_date, total, subtotal, tax, currency, line_items\n- Confidence scoring per extraction\n- Free tier: 50 parses/month\n- Sub-10ms for PDFs, AI-enhanced extraction available\n\n**Getting started:**\n1. `POST /v1/register` with your company name → get your API key\n2. `POST /v1/parse` with your document file\n3. `GET /v1/usage` to check your quota",
+    "version": "0.1.0",
+    "contact": {
+      "name": "ParseFlow Support",
+      "url": "https://github.com/NikitaDmitrieff/parseflow"
+    },
+    "license": {
+      "name": "MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api-ebon-tau-30.vercel.app",
+      "description": "Production"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "API key obtained from POST /v1/register"
+      }
+    },
+    "schemas": {
+      "LineItem": {
+        "type": "object",
+        "properties": {
+          "description": { "type": "string" },
+          "quantity": { "type": "number", "nullable": true },
+          "unit_price": { "type": "number", "nullable": true },
+          "amount": { "type": "number" }
+        },
+        "required": ["description", "amount"]
+      },
+      "ParseResult": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid", "description": "Unique parse ID" },
+          "status": {
+            "type": "string",
+            "enum": ["success", "partial", "failed"],
+            "description": "success = confidence > 0.5, partial = 0.2–0.5, failed = < 0.2"
+          },
+          "document_type": {
+            "type": "string",
+            "enum": ["invoice", "receipt", "contract", "other"]
+          },
+          "vendor": { "type": "string", "nullable": true },
+          "vendor_address": { "type": "string", "nullable": true },
+          "invoice_number": { "type": "string", "nullable": true },
+          "date": { "type": "string", "format": "date", "nullable": true, "description": "ISO 8601 YYYY-MM-DD" },
+          "due_date": { "type": "string", "format": "date", "nullable": true },
+          "total": { "type": "number", "nullable": true },
+          "subtotal": { "type": "number", "nullable": true },
+          "tax": { "type": "number", "nullable": true },
+          "currency": { "type": "string", "nullable": true, "description": "ISO 4217 e.g. USD, EUR" },
+          "line_items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/LineItem" },
+            "nullable": true
+          },
+          "raw_text": { "type": "string", "nullable": true, "description": "Included when include_raw_text=true" },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "processing_ms": { "type": "integer", "description": "Processing time in milliseconds" },
+          "model_used": { "type": "string", "description": "Parser engine used (e.g. claude-haiku-4-5-20251001, rule-based-v1)" }
+        },
+        "required": ["id", "status", "document_type", "confidence", "processing_ms", "model_used"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" },
+          "code": { "type": "string" }
+        },
+        "required": ["error", "code"]
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "description": "Returns API status and version. Use to verify connectivity.",
+        "operationId": "healthCheck",
+        "responses": {
+          "200": {
+            "description": "API is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" },
+                    "version": { "type": "string", "example": "0.1.0" },
+                    "timestamp": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/register": {
+      "post": {
+        "summary": "Register and get API key",
+        "description": "Creates an organization and returns a one-time API key. Save the key — it is shown only once.",
+        "operationId": "register",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "description": "Your company or project name", "example": "Acme Corp" }
+                },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registration successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "organization_id": { "type": "string", "format": "uuid" },
+                    "api_key": { "type": "string", "example": "pf_live_abc123..." },
+                    "plan": { "type": "string", "example": "free" },
+                    "parses_quota": { "type": "integer", "example": 50 },
+                    "warning": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Missing name field", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/v1/parse": {
+      "post": {
+        "summary": "Parse a document",
+        "description": "Upload a PDF or image file and receive structured JSON with extracted invoice/receipt data.\n\n**Supported formats:** application/pdf, image/jpeg, image/png, image/webp\n\n**Max file size:** 10MB\n\n**Form fields:**\n- `file` (required): The document file\n- `include_raw_text` (optional): Set to `true` to include extracted text in response",
+        "operationId": "parseDocument",
+        "security": [{ "ApiKey": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "PDF or image file to parse"
+                  },
+                  "include_raw_text": {
+                    "type": "string",
+                    "enum": ["true", "false"],
+                    "description": "Include extracted text in response"
+                  }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Document parsed successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ParseResult" },
+                "example": {
+                  "id": "48a544b2-a892-4f5d-9ab1-177d73887325",
+                  "status": "success",
+                  "document_type": "invoice",
+                  "vendor": "Acme Corp Inc",
+                  "invoice_number": "INV-2026-001",
+                  "date": "2026-03-06",
+                  "due_date": "2026-04-06",
+                  "total": 550,
+                  "subtotal": 500,
+                  "tax": 50,
+                  "currency": "USD",
+                  "confidence": 0.7,
+                  "processing_ms": 4,
+                  "model_used": "rule-based-v1"
+                }
+              }
+            }
+          },
+          "401": { "description": "Invalid or missing API key", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "400": { "description": "Invalid file or unsupported format", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "429": { "description": "Monthly quota exceeded", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "500": { "description": "Parse failed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/v1/usage": {
+      "get": {
+        "summary": "Check usage and quota",
+        "description": "Returns current month parse count, quota, and billing period.",
+        "operationId": "getUsage",
+        "security": [{ "ApiKey": [] }],
+        "responses": {
+          "200": {
+            "description": "Usage data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "api_key_id": { "type": "string" },
+                    "api_key_prefix": { "type": "string" },
+                    "organization_id": { "type": "string" },
+                    "plan": { "type": "string" },
+                    "parses_used": { "type": "integer" },
+                    "parses_quota": { "type": "integer" },
+                    "parses_remaining": { "type": "integer" },
+                    "period_start": { "type": "string", "format": "date-time" },
+                    "period_end": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Invalid API key", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    }
+  }
+}

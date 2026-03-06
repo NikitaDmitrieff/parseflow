@@ -77,7 +77,7 @@ export default function HomePage() {
             </span>
           </div>
           <pre className="p-6 text-sm font-mono text-slate-300 overflow-x-auto leading-relaxed">
-            <code>{`curl -X POST https://api.parseflow.dev/v1/parse \\
+            <code>{`curl -X POST https://api-ebon-tau-30.vercel.app/v1/parse \\
   -H "X-API-Key: pf_live_your_key_here" \\
   -F "file=@invoice.pdf"
 
@@ -120,7 +120,7 @@ export default function HomePage() {
                 Free
               </div>
               <p className="text-slate-500 text-sm mb-8">
-                100 parses / month
+                50 parses / month
               </p>
               <ul className="space-y-3 text-sm text-slate-700">
                 <li className="flex items-center gap-2">
@@ -200,7 +200,7 @@ export default function HomePage() {
             Start parsing in 5 minutes
           </h2>
           <p className="text-slate-600 mb-8">
-            No credit card required. 100 free parses on us.
+            No credit card required. 50 free parses on us.
           </p>
           <a
             href="/register"
