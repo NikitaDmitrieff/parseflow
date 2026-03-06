@@ -21,12 +21,21 @@ export const metadata: Metadata = {
     type: "website",
     url: "https://parseflow-dashboard.vercel.app",
     siteName: "ParseFlow",
+    images: [
+      {
+        url: "https://parseflow-dashboard.vercel.app/api/og",
+        width: 1200,
+        height: 630,
+        alt: "ParseFlow — Invoice & Document Parser API",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "ParseFlow — Invoice & Document Parser API",
     description:
       "Upload a PDF or image, get back structured JSON. Free tier: 50 parses/month.",
+    images: ["https://parseflow-dashboard.vercel.app/api/og"],
   },
   alternates: {
     canonical: "https://parseflow-dashboard.vercel.app",
