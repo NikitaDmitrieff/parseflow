@@ -3,7 +3,7 @@
   "info": {
     "title": "ParseFlow — AI Invoice & Document Parser API",
     "description": "Parse invoices, receipts, and financial documents into structured JSON. No training required — upload a PDF or image, get back extracted vendor, amounts, dates, line items, and more.\n\n**Key features:**\n- Supports PDF, JPEG, PNG, WebP\n- Extracts: vendor, invoice_number, date, due_date, total, subtotal, tax, currency, line_items\n- Confidence scoring per extraction\n- Free tier: 50 parses/month\n- Sub-10ms for PDFs, AI-enhanced extraction available\n\n**Getting started:**\n1. `POST /v1/register` with your company name → get your API key\n2. `POST /v1/parse` with your document file\n3. `GET /v1/usage` to check your quota",
-    "version": "0.1.0",
+    "version": "0.2.1",
     "contact": {
       "name": "ParseFlow Support",
       "url": "https://github.com/NikitaDmitrieff/parseflow"
@@ -232,6 +232,51 @@
           "400": { "description": "Invalid file or unsupported format", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
           "429": { "description": "Monthly quota exceeded", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
           "500": { "description": "Parse failed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/v1/checkout": {
+      "post": {
+        "summary": "Create a checkout session to upgrade plan",
+        "description": "Creates a Stripe or Lemon Squeezy checkout session for the specified plan. Returns a checkout URL to redirect the user to. Requires an API key.",
+        "operationId": "createCheckout",
+        "security": [{ "ApiKey": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "plan": {
+                    "type": "string",
+                    "enum": ["pro", "scale"],
+                    "description": "Plan to upgrade to. pro = $9/month for 1,000 parses. scale = $29/month for 10,000 parses."
+                  }
+                },
+                "required": ["plan"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Checkout session created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "checkout_url": { "type": "string", "format": "uri", "description": "Redirect user to this URL to complete payment" },
+                    "provider": { "type": "string", "enum": ["stripe", "lemonsqueezy"] }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid plan", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Invalid API key", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "503": { "description": "Payments not configured", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
         }
       }
     },
