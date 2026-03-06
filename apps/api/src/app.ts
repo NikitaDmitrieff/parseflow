@@ -28,7 +28,7 @@ app.use(
 app.get("/health", (c) => {
   return c.json({
     status: "ok",
-    version: "0.2.0",
+    version: "0.2.1",
     timestamp: new Date().toISOString(),
   });
 });

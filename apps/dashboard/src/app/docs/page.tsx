@@ -174,6 +174,7 @@ export default function DocsPage() {
               <tbody className="divide-y divide-slate-100">
                 {[
                   ["vendor", "string", "Vendor / supplier name"],
+                  ["vendor_address", "string | null", "Vendor street address, city, state, ZIP"],
                   ["invoice_number", "string", "Invoice or reference number"],
                   ["date", "date", "Invoice issue date (YYYY-MM-DD)"],
                   ["due_date", "date", "Payment due date"],
