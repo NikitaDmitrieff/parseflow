@@ -7,6 +7,7 @@ import { db } from "./db.js";
 import { apiKeyAuth, type AuthVariables } from "./auth.js";
 import { parseDocument, logParse } from "./parse.js";
 import { stripe, PLANS, createCheckoutSession, handleCheckoutComplete, type PlanKey } from "./stripe.js";
+import { LS_ENABLED, LS_PLANS, createLSCheckout, verifyLSWebhook, handleLSOrderComplete } from "./lemonsqueezy.js";
 import openapiSpecJson from "./openapi.json";
 
 const openapiSpec: object = openapiSpecJson;
@@ -170,11 +171,11 @@ app.get("/v1/usage", apiKeyAuth, async (c) => {
   });
 });
 
-// ─── Stripe: create checkout session ────────────────────────────────────────
+// ─── Checkout: Stripe (preferred) or Lemon Squeezy (fallback) ───────────────
 // POST /v1/checkout  { plan: "pro" | "scale" }  (requires API key auth)
 app.post("/v1/checkout", apiKeyAuth, async (c) => {
-  if (!stripe) {
-    return c.json({ error: "payments not enabled", code: "STRIPE_NOT_CONFIGURED" }, 503);
+  if (!stripe && !LS_ENABLED) {
+    return c.json({ error: "payments not enabled", code: "PAYMENTS_NOT_CONFIGURED" }, 503);
   }
 
   const body = await c.req.json().catch(() => null);
@@ -193,17 +194,33 @@ app.post("/v1/checkout", apiKeyAuth, async (c) => {
   const org = c.get("org");
   const dashboardBase = process.env.DASHBOARD_URL ?? "https://parseflow-dashboard.vercel.app";
 
+  // Prefer Stripe; fall back to Lemon Squeezy if Stripe not configured
+  if (stripe) {
+    try {
+      const url = await createCheckoutSession(
+        org.id,
+        plan,
+        `${dashboardBase}/upgrade/success`,
+        `${dashboardBase}/upgrade/cancel`
+      );
+      return c.json({ checkout_url: url, provider: "stripe" }, 200);
+    } catch (err: any) {
+      console.error("stripe checkout error:", err);
+      return c.json({ error: err.message ?? "checkout failed", code: "STRIPE_ERROR" }, 500);
+    }
+  }
+
+  // Lemon Squeezy path
   try {
-    const url = await createCheckoutSession(
+    const url = await createLSCheckout(
       org.id,
       plan,
-      `${dashboardBase}/upgrade/success`,
-      `${dashboardBase}/upgrade/cancel`
+      `${dashboardBase}/upgrade/success`
     );
-    return c.json({ checkout_url: url }, 200);
+    return c.json({ checkout_url: url, provider: "lemonsqueezy" }, 200);
   } catch (err: any) {
-    console.error("checkout error:", err);
-    return c.json({ error: err.message ?? "checkout failed", code: "STRIPE_ERROR" }, 500);
+    console.error("lemonsqueezy checkout error:", err);
+    return c.json({ error: err.message ?? "checkout failed", code: "LS_ERROR" }, 500);
   }
 });
 
@@ -241,6 +258,45 @@ app.post("/v1/webhooks/stripe", async (c) => {
       await handleCheckoutComplete(session);
     } catch (err: any) {
       console.error("handleCheckoutComplete error:", err);
+      return c.json({ error: "failed to update plan" }, 500);
+    }
+  }
+
+  return c.json({ received: true });
+});
+
+// ─── Lemon Squeezy: webhook ───────────────────────────────────────────────────
+// POST /v1/webhooks/lemonsqueezy  (no API key auth — verified by LS signature)
+app.post("/v1/webhooks/lemonsqueezy", async (c) => {
+  const sig = c.req.header("X-Signature");
+  if (!sig) {
+    return c.json({ error: "missing X-Signature header" }, 400);
+  }
+
+  const rawBody = await c.req.text();
+
+  if (!verifyLSWebhook(rawBody, sig)) {
+    return c.json({ error: "invalid webhook signature" }, 401);
+  }
+
+  let event: any;
+  try {
+    event = JSON.parse(rawBody);
+  } catch {
+    return c.json({ error: "invalid JSON body" }, 400);
+  }
+
+  const eventName = event?.meta?.event_name;
+  const customData = event?.meta?.custom_data ?? {};
+  const orgId = customData?.organization_id;
+  const plan = customData?.plan;
+  const orderId = event?.data?.id;
+
+  if ((eventName === "order_created" || eventName === "subscription_created") && orgId && plan) {
+    try {
+      await handleLSOrderComplete(orgId, plan, String(orderId));
+    } catch (err: any) {
+      console.error("handleLSOrderComplete error:", err);
       return c.json({ error: "failed to update plan" }, 500);
     }
   }
